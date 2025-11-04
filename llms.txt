@@ -2,14 +2,16 @@
 
 > Pydantic models for Riscure FI/SCA probe specifications and Moku integration
 
-## Quick Reference
+## What is this?
 
-### Core Models
-- `DS1120APlatform` - High-power unidirectional EM-FI probe model
-- `SignalPort` - Port specifications with voltage validation
-- `ProbeTip` - Interchangeable probe tip specifications
+Standalone Pydantic library defining electrical specifications for Riscure FI/SCA probes with voltage-safe wiring validation against Moku platforms.
+
+**Key insight:** Type-safe hardware specifications enable voltage validation before physical connections.
+
+## Core Exports
 
 ### Platform Constants
+
 ```python
 from riscure_models import DS1120A_PLATFORM
 
@@ -17,7 +19,14 @@ from riscure_models import DS1120A_PLATFORM
 probe = DS1120A_PLATFORM  # 450V, 64A, fixed 50ns pulse
 ```
 
-### Basic Usage Pattern
+### Key Classes
+
+- `DS1120APlatform` - High-power unidirectional EM-FI probe model
+- `SignalPort` - Port specifications with voltage validation
+- `ProbeTip` - Interchangeable probe tip specifications
+
+## Basic Usage
+
 ```python
 from riscure_models import DS1120APlatform, DS1120A_PLATFORM
 from moku_models import MOKU_GO_PLATFORM
@@ -36,92 +45,37 @@ unsafe = trigger.is_voltage_compatible(5.0)  # False
 
 ## Probe Comparison
 
-| Model | Type | Pulse Width | Max Voltage | Max Current | Outputs |
-|-------|------|-------------|-------------|-------------|---------|
-| DS1120A | Unidirectional | 50ns (fixed) | 450V | 64A | Injection only |
-| DS1121A | Bidirectional | 4-200ns (adjustable) | 100V | TBD | Injection + Sensing |
+| Model | Type | Pulse Width | Max Voltage | Max Current | Status |
+|-------|------|-------------|-------------|-------------|--------|
+| DS1120A | Unidirectional | 50ns (fixed) | 450V | 64A | ✅ Implemented |
+| DS1121A | Bidirectional | 4-200ns (adjustable) | 100V | TBD | 🚧 Planned |
 
 ## DS1120A Port Summary
 
-### Input Ports
+### Input Ports (Connect FROM Moku)
+
 | Port ID | Voltage Range | Impedance | Type | Moku Compatible |
 |---------|---------------|-----------|------|-----------------|
 | `digital_glitch` | 0-3.3V TTL | 50Ω | Digital trigger | OutputA/B (TTL) |
 | `pulse_amplitude` | 0-3.3V analog | 50Ω | Power control | DACOut1/2 |
 | `power_24vdc` | 24-450V DC | N/A | External PSU | External only |
 
-### Output Ports
+### Output Ports (Connect TO Moku)
+
 | Port ID | Voltage Range | Impedance | Coupling | Moku Compatible |
 |---------|---------------|-----------|----------|-----------------|
 | `coil_current` | -1.4V to 0V | 50Ω | AC | InputA/B (AC, 50Ω term) |
 
-## Key Design Principles
-
-1. **Moku Integration**: Port models designed for validation against moku-models
-2. **Voltage Safety**: voltage_min/voltage_max for explicit safety checking
-3. **Pure Specifications**: No control logic, just validated hardware specs
-4. **Extensible**: Template for DS1121A and future laser probes
-
-## Important Notes
-
-- **Fixed pulse width**: DS1120A always outputs 50ns pulses (hardware limitation)
-- **External PSU required**: 24-450V DC power supply not provided by Moku
-- **AC coupling required**: coil_current output is transient pulse
-- **Probe tips are interchangeable**: Affects field strength, not electrical interface
-
-## Validation Workflow
-
-```python
-from riscure_models import DS1120A_PLATFORM
-from moku_models import MOKU_GO_PLATFORM
-
-probe = DS1120A_PLATFORM
-moku = MOKU_GO_PLATFORM
-
-# Get probe input port
-trigger_port = probe.get_port_by_id('digital_glitch')
-
-# Get Moku output port (future: direct compatibility check)
-moku_output = moku.get_analog_output_by_id('OUT1')
-
-# Manual voltage validation
-voltage = 3.3  # Moku TTL output
-if trigger_port.is_voltage_compatible(voltage):
-    print("Safe connection")
-else:
-    print("Voltage incompatibility!")
-```
-
-## Documentation
-
-- **README.md** - Installation and basic usage
-- **CLAUDE.md** - AI assistant context and development guidelines
-- **riscure_ds1120a.md** - Detailed DS1120A specifications and wiring diagrams
-- **DS1120A_DS1121A_datasheet.pdf** - Official Riscure datasheet
-
-## File Structure
-
-```
-riscure_models/
-├── __init__.py              # Public API (import from here)
-└── probes/
-    ├── __init__.py
-    ├── ds1120a.py          # DS1120APlatform, SignalPort, ProbeTip
-    └── ds1121a.py          # (Future) DS1121A bidirectional probe
-```
-
 ## Common Tasks
 
-### Query Port Specs
+**Query port specs:**
 ```python
+from riscure_models import DS1120A_PLATFORM
+
 probe = DS1120A_PLATFORM
 
 # List all input ports
 for port in probe.get_input_ports():
-    print(f"{port.port_id}: {port.get_voltage_range_str()}")
-
-# List all output ports
-for port in probe.get_output_ports():
     print(f"{port.port_id}: {port.get_voltage_range_str()}")
 
 # Get specific port
@@ -129,7 +83,7 @@ current_monitor = probe.get_port_by_id('coil_current')
 print(f"Coupling: {current_monitor.coupling}")  # "AC"
 ```
 
-### Check Probe Tip Options
+**Check probe tip options:**
 ```python
 probe = DS1120A_PLATFORM
 
@@ -142,45 +96,96 @@ tip = probe.get_tip_by_id('4mm_positive')
 print(f"Max current: {tip.max_current_a}A")
 ```
 
-### Typical Wiring Pattern
+**Validate wiring with Moku:**
 ```python
-from moku_models import MokuConfig, SlotConfig, MOKU_GO_PLATFORM
 from riscure_models import DS1120A_PLATFORM
+from moku_models import MOKU_GO_PLATFORM
 
-# Moku configuration
-moku_config = MokuConfig(
-    platform=MOKU_GO_PLATFORM,
-    slots={1: SlotConfig(instrument='CloudCompile', bitstream='emfi.tar')},
-    routing=[
-        # Trigger to probe
-        # OUT1 (Moku) → digital_glitch (DS1120A)
-
-        # Power control to probe
-        # OUT2 (Moku) → pulse_amplitude (DS1120A)
-
-        # Monitor from probe
-        # coil_current (DS1120A) → IN1 (Moku)
-    ]
-)
-
-# Probe specification
+# Load specifications
 probe = DS1120A_PLATFORM
+moku = MOKU_GO_PLATFORM
 
-# Validate connections (future: automated cross-validation)
+# Get probe input port
+trigger_port = probe.get_port_by_id('digital_glitch')
+
+# Get Moku output port (future: direct compatibility check)
+moku_output = moku.get_analog_output_by_id('OUT1')
+
+# Manual voltage validation
+voltage = 3.3  # Moku TTL output
+if trigger_port.is_voltage_compatible(voltage):
+    print("✓ Safe connection")
+else:
+    print("⚠ Voltage incompatibility!")
 ```
 
-## Future Enhancements
+## File Structure
 
-- [ ] DS1121A bidirectional probe model
-- [ ] Laser probe models (LS1110A, etc.)
-- [ ] Automated voltage compatibility checking with moku-models
-- [ ] Wiring diagram generation
-- [ ] Cross-platform validation utilities
-- [ ] PyPI package publication
+```
+riscure_models/
+├── __init__.py      # Public API (import from here)
+└── probes/
+    ├── __init__.py
+    ├── ds1120a.py   # DS1120APlatform, SignalPort, ProbeTip
+    └── ds1121a.py   # (Future) DS1121A bidirectional probe
+```
+
+## Key Design Principles
+
+1. **Voltage safety first** - Explicit voltage_min/voltage_max for safety validation
+2. **Moku integration** - Mirror moku-models patterns for seamless compatibility
+3. **Pure specifications** - No control logic, just validated hardware specs
+4. **Extensible** - Template for DS1121A, laser probes, and future devices
+
+## Important Notes
+
+- **Fixed pulse width**: DS1120A always outputs 50ns pulses (hardware limitation)
+- **External PSU required**: 24-450V DC power supply not provided by Moku
+- **AC coupling required**: coil_current output is transient pulse
+- **Probe tips are interchangeable**: Affects field strength, not electrical interface
+
+## Integration Notes
+
+**Used by:**
+- [moku-instrument-forge](https://github.com/sealablab/moku-instrument-forge) - Probe deployment
+- Wiring validation tools
+- Safety checking frameworks
+
+**Works with:**
+- [moku-models](../moku-models/) - Platform specifications (voltage compatibility)
+- [basic-app-datatypes](../basic-app-datatypes/) - Type system integration
+
+**Validation flow:**
+```
+Moku platform specs + Probe port specs → Voltage safety validation → Wiring diagram
+```
+
+## Typical Wiring Pattern
+
+```
+[Moku OUT1] → [digital_glitch] → [DS1120A] → [Target DUT]
+[Moku OUT2] → [pulse_amplitude] ↗
+[Moku IN1]  ← [coil_current]   ↙
+[External PSU] → [power_24vdc] ↗
+```
+
+## For More Details
+
+**Deep context:** See [CLAUDE.md](CLAUDE.md) for:
+- Complete DS1120A specifications and wiring diagrams
+- Integration patterns with moku-models
+- Development workflow for adding probe models
+- Voltage safety validation patterns
+- Future probe models (DS1121A, laser probes)
+
+**API documentation:** See [README.md](README.md) for installation
+
+**Datasheet:** See [DS1120A_DS1121A_datasheet.pdf](DS1120A_DS1121A_datasheet.pdf)
 
 ---
 
-**Parent Project**: [moku-instrument-forge](https://github.com/sealablab/moku-instrument-forge)
-**Related Library**: [moku-models](https://github.com/sealablab/moku-models)
-**License**: MIT
-**Last Updated**: 2025-11-03
+**Version:** 0.1.0
+**Last Updated:** 2025-11-03
+**Parent Project:** [moku-instrument-forge](https://github.com/sealablab/moku-instrument-forge)
+**Related Library:** [moku-models](../moku-models/)
+**License:** MIT
