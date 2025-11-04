@@ -113,3 +113,29 @@ probe = DS1120APlatform()
 ## License
 
 MIT
+
+## 🤖 AI Agent Integration
+
+This repository is structured for optimal AI agent assistance:
+
+### Documentation for Agents
+
+- **llms.txt** - Quick reference (Tier 1): Probe catalog, port specifications, voltage compatibility
+- **CLAUDE.md** - Deep context (Tier 2): Probe hardware design, safety validation patterns, integration with moku-models
+- **Source code** - Implementation (Tier 3): Pydantic models with voltage validation logic
+
+### Loading Strategy
+
+**Progressive disclosure pattern:**
+1. Start with `llms.txt` (~400 tokens) for probe specs and port lookups
+2. Load `CLAUDE.md` (~3k tokens) for safety patterns and cross-platform validation
+3. Load source files when implementing new probe models
+
+### Integration with Sibling Libraries
+
+- **moku-models** - Validate Moku output voltages against probe input limits (prevent hardware damage)
+- **basic-app-datatypes** - Verify control signal types match probe port requirements
+
+---
+
+**Last Updated:** 2025-11-04 10:35 MST
