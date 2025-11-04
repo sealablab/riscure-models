@@ -9,7 +9,8 @@
 - **Voltage Validation**: Safety checking before physical connections
 - **Moku Integration**: Compatible with moku-models for cross-platform validation
 
-**Parent Project**: Part of [moku-instrument-forge](https://github.com/sealablab/moku-instrument-forge) ecosystem
+**Part of:** [moku-instrument-forge-mono-repo](https://github.com/sealablab/moku-instrument-forge-mono-repo) (monorepo orchestrator)
+**Used by:** [moku-instrument-forge](https://github.com/sealablab/moku-instrument-forge) (forge code generation)
 
 **Design Mirror**: Follows moku-models architecture patterns for consistency
 
@@ -232,15 +233,15 @@ if not port.is_voltage_compatible(moku_ttl_voltage):
 
 ---
 
-## Integration with Parent moku-instrument-forge
+## Integration with forge Code Generation
 
-**Import alongside moku-models**:
+**Import alongside moku-models in forge generators**:
 ```python
 from moku_models import MokuConfig, MOKU_GO_PLATFORM
 from riscure_models import DS1120A_PLATFORM
 ```
 
-**Use cases**:
+**Use cases:**
 - Validate Moku output voltage ranges against probe input requirements
 - Generate wiring diagrams with correct port connections
 - Document probe specifications in deployment configs

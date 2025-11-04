@@ -146,46 +146,30 @@ riscure_models/
 
 ## Integration Notes
 
-**Used by:**
-- [moku-instrument-forge](https://github.com/sealablab/moku-instrument-forge) - Probe deployment
-- Wiring validation tools
-- Safety checking frameworks
+**Used by:** moku-instrument-forge, wiring validation tools, safety checking frameworks
 
 **Works with:**
-- [moku-models](../moku-models/) - Platform specifications (voltage compatibility)
-- [basic-app-datatypes](../basic-app-datatypes/) - Type system integration
+- [moku-models](https://github.com/sealablab/moku-models) (sibling library) - Platform voltage compatibility
+- [basic-app-datatypes](https://github.com/sealablab/basic-app-datatypes) (sibling library) - Type system integration
 
-**Validation flow:**
-```
-Moku platform specs + Probe port specs → Voltage safety validation → Wiring diagram
-```
+**Validation flow:** Moku platform specs + Probe port specs → Voltage safety validation → Wiring diagram
 
-## Typical Wiring Pattern
-
-```
-[Moku OUT1] → [digital_glitch] → [DS1120A] → [Target DUT]
-[Moku OUT2] → [pulse_amplitude] ↗
-[Moku IN1]  ← [coil_current]   ↙
-[External PSU] → [power_24vdc] ↗
-```
+**Wiring pattern:** See CLAUDE.md for complete diagrams and safety notes
 
 ## For More Details
 
 **Deep context:** See [CLAUDE.md](CLAUDE.md) for:
 - Complete DS1120A specifications and wiring diagrams
 - Integration patterns with moku-models
-- Development workflow for adding probe models
 - Voltage safety validation patterns
-- Future probe models (DS1121A, laser probes)
+- Development workflow for adding probe models
 
-**API documentation:** See [README.md](README.md) for installation
-
-**Datasheet:** See [DS1120A_DS1121A_datasheet.pdf](DS1120A_DS1121A_datasheet.pdf)
+**Installation:** See [README.md](README.md)
 
 ---
 
 **Version:** 0.1.0
-**Last Updated:** 2025-11-03
-**Parent Project:** [moku-instrument-forge](https://github.com/sealablab/moku-instrument-forge)
-**Related Library:** [moku-models](../moku-models/)
+**Last Updated:** 2025-11-04
 **License:** MIT
+**Part of:** [moku-instrument-forge-mono-repo](https://github.com/sealablab/moku-instrument-forge-mono-repo) (monorepo orchestrator)
+**Used by:** [moku-instrument-forge](https://github.com/sealablab/moku-instrument-forge) (forge code generation)
