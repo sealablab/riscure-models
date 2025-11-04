@@ -144,6 +144,71 @@ if probe_input.is_voltage_compatible(3.3):
 
 ---
 
+## Integration with Sibling Libraries
+
+### With moku-models
+
+**Use case:** Voltage safety validation before physical wiring
+
+```python
+from moku_models import MOKU_GO_PLATFORM
+from riscure_models import DS1120A_PLATFORM
+
+# Get Moku platform output specifications
+moku = MOKU_GO_PLATFORM
+moku_output = moku.get_analog_output_by_id('OUT1')
+# → Can output ±5V analog or 3.3V TTL
+
+# Get probe input specifications
+probe = DS1120A_PLATFORM
+probe_input = probe.get_port_by_id('digital_glitch')
+# → voltage_min=0V, voltage_max=3.3V (TTL input only)
+
+# Validate: Moku TTL output compatible with probe input
+ttl_voltage = 3.3
+if probe_input.is_voltage_compatible(ttl_voltage):
+    print("✓ Safe: Moku:Go OUT1 (TTL) → DS1120A digital_glitch")
+else:
+    raise ValueError("⚠ Unsafe voltage for probe input!")
+
+# WARNING: Direct analog output (±5V) would damage probe!
+if not probe_input.is_voltage_compatible(5.0):
+    print("⚠ NEVER connect Moku OUT1 (analog) directly to digital_glitch!")
+```
+
+**Integration point:** Deployment tools perform this validation automatically before suggesting wire connections.
+
+**Critical safety check:** Always validate voltage ranges to prevent probe damage (DS1120A digital inputs are NOT 5V tolerant).
+
+### With basic-app-datatypes
+
+**Use case:** Type compatibility with probe specifications
+
+```python
+from basic_app_datatypes import BasicAppDataTypes, TYPE_REGISTRY
+from riscure_models import DS1120A_PLATFORM
+
+# User specifies output voltage type for probe driver
+output_type = BasicAppDataTypes.VOLTAGE_OUTPUT_05V_S16
+metadata = TYPE_REGISTRY[output_type]
+# → voltage_range: "±5V"
+
+# Check probe input requirements
+probe = DS1120A_PLATFORM
+trigger_port = probe.get_port_by_id('digital_glitch')
+# → voltage_min=0V, voltage_max=3.3V (TTL only)
+
+# Validate: ±5V type range exceeds probe input limit
+# Need to ensure Moku output configured for TTL mode, not raw DAC
+if trigger_port.is_voltage_compatible(3.3):
+    print("✓ Compatible if Moku output uses TTL mode")
+    print("⚠ Configure Moku OUT1 for TTL, not analog ±5V!")
+```
+
+**Integration point:** forge generator can cross-check output types against probe input requirements during YAML validation.
+
+---
+
 ## Common Tasks
 
 ### Add New Probe Model
